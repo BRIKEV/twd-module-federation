@@ -1,0 +1,22 @@
+{
+  "name": "twd-module-federation",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "rsbuild dev --open",
+    "build": "rsbuild build",
+    "preview": "rsbuild preview"
+  },
+  "dependencies": {
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  },
+  "devDependencies": {
+    "@rsbuild/core": "2.1.4",
+    "@rsbuild/plugin-react": "^2.1.0",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.7.2",
+    "@module-federation/rsbuild-plugin":"^2.8.0"
+  }
+}
