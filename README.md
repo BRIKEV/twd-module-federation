@@ -231,8 +231,9 @@ cold profile: the sidebar appears at 7–12 ms, the worker takes control at
 35–62 ms, and `twd-cli` starts in that gap. With the default `retryCount: 2`
 it's invisible behind a green "Retried (1)"; with `retryCount: 1` the mocked
 test fails **100% of runs in all three remotes**. Not federation-specific —
-it reproduces in any project whose first test mocks a request. Investigation and
-proposed fix: `twd-cli/docs/spec-service-worker-readiness.md`.
+it reproduces in any project whose first test mocks a request, and it's fixable
+in `twd-cli` alone. Investigation, measurements and proposed fix:
+`twd-cli/docs/spec-service-worker-readiness.md`.
 
 **One smaller gap.** Suites live in one flat registry with no namespacing, so
 two teams writing `describe('App')` collide with no owner attribution — which
