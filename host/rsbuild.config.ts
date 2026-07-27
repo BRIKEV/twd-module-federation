@@ -6,6 +6,9 @@ import moduleFederationConfig from './module-federation.config';
 export default defineConfig({
   plugins: [pluginReact(), pluginModuleFederation(moduleFederationConfig)],
   server: {
-    port: 3001,
+    port: 3000,
+  },
+  html: {
+    title: 'Module Federation POC — Vue + legacy React + modern React',
   },
 });

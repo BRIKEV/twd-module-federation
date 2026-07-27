@@ -2,21 +2,28 @@
   "name": "twd-module-federation",
   "private": true,
   "version": "1.0.0",
+  "description": "Module Federation POC: one page, three microfrontends (Vue 3, React 17 legacy API, React 19)",
+  "workspaces": [
+    "packages/*",
+    "host",
+    "mfe-react-modern",
+    "mfe-react-legacy",
+    "mfe-vue"
+  ],
   "scripts": {
-    "dev": "rsbuild dev --open",
-    "build": "rsbuild build",
-    "preview": "rsbuild preview"
-  },
-  "dependencies": {
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "dev": "concurrently -n host,modern,legacy,vue -c cyan,green,yellow,magenta \"npm:dev:*\"",
+    "dev:host": "npm run dev -w host",
+    "dev:modern": "npm run dev -w mfe-react-modern",
+    "dev:legacy": "npm run dev -w mfe-react-legacy",
+    "dev:vue": "npm run dev -w mfe-vue",
+    "build": "npm run build -w mfe-react-modern && npm run build -w mfe-react-legacy && npm run build -w mfe-vue && npm run build -w host",
+    "preview": "concurrently -n host,modern,legacy,vue -c cyan,green,yellow,magenta \"npm:preview:*\"",
+    "preview:host": "npm run preview -w host",
+    "preview:modern": "npm run preview -w mfe-react-modern",
+    "preview:legacy": "npm run preview -w mfe-react-legacy",
+    "preview:vue": "npm run preview -w mfe-vue"
   },
   "devDependencies": {
-    "@rsbuild/core": "2.1.4",
-    "@rsbuild/plugin-react": "^2.1.0",
-    "@types/react": "^19.2.7",
-    "@types/react-dom": "^19.2.3",
-    "typescript": "^5.7.2",
-    "@module-federation/rsbuild-plugin":"^2.8.0"
+    "concurrently": "^9.1.2"
   }
 }

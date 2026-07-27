@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["DOM", "DOM.Iterable", "ES2020"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    // Pin to this workspace's own @types/react@17 so the hoisted React 19
+    // types at the repo root don't leak in.
+    "typeRoots": ["./node_modules/@types", "../node_modules/@types"]
+  },
+  "include": ["src", "module-federation.config.ts", "rsbuild.config.ts"]
+}

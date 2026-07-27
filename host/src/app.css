@@ -1,0 +1,152 @@
+/* Host chrome only. Each microfrontend ships its own card styles. */
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background: #f1f5f9;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #0f172a;
+}
+
+.page {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+}
+
+.page__title {
+  margin: 0 0 0.4rem;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.page__lede {
+  margin: 0;
+  max-width: 46rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #475569;
+}
+
+.statusbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.75rem;
+  margin: 1.75rem 0;
+  padding: 0.9rem 1.25rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.statusbar__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.statusbar__label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+}
+
+.statusbar__value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  color: #1e293b;
+}
+
+.statusbar__value--big {
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.statusbar__reset {
+  margin-left: auto;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  font: inherit;
+  font-size: 0.78rem;
+  color: #475569;
+  cursor: pointer;
+}
+
+.statusbar__reset:hover {
+  background: #e2e8f0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.outlet-loading {
+  padding: 1.25rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.outlet-error {
+  padding: 1.25rem;
+  border: 1px solid #fecaca;
+  border-top: 3px solid #dc2626;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.outlet-error__title {
+  margin: 0 0 0.4rem;
+  font-size: 0.95rem;
+  color: #b91c1c;
+}
+
+.outlet-error__body {
+  margin: 0 0 0.4rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: #7f1d1d;
+  overflow-wrap: anywhere;
+}
+
+.outlet-error__hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.page__foot {
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #cbd5e1;
+  font-size: 0.82rem;
+  line-height: 1.65;
+  color: #475569;
+}
+
+.page__foot p {
+  margin: 0 0 0.6rem;
+  max-width: 46rem;
+}
+
+.page__foot code {
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+  background: #e2e8f0;
+  font-size: 0.95em;
+}

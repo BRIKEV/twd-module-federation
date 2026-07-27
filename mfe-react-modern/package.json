@@ -1,0 +1,24 @@
+{
+  "name": "mfe-react-modern",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Remote on :3001 — React 19. Shares React as a singleton with the host and exposes a real React component.",
+  "scripts": {
+    "dev": "rsbuild dev",
+    "build": "rsbuild build",
+    "preview": "rsbuild preview"
+  },
+  "dependencies": {
+    "@poc/bus": "1.0.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  },
+  "devDependencies": {
+    "@module-federation/rsbuild-plugin": "^2.8.0",
+    "@rsbuild/core": "2.1.4",
+    "@rsbuild/plugin-react": "^2.1.0",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,19 @@
+/* Only applied when this remote runs on its own port. Not shipped to the host. */
+
+body {
+  margin: 0;
+  background: #f8fafc;
+}
+
+.standalone {
+  max-width: 26rem;
+  margin: 3rem auto;
+  padding: 0 1rem;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.standalone__note {
+  margin: 0 0 0.75rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}

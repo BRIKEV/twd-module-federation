@@ -1,0 +1,15 @@
+{
+  "name": "@poc/bus",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Framework-agnostic shared store. No framework dependency is what lets it be a true MF singleton.",
+  "type": "module",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  }
+}

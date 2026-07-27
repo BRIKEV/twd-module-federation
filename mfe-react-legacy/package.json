@@ -1,0 +1,24 @@
+{
+  "name": "mfe-react-legacy",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Remote on :3002 — React 17 with the pre-18 API. Bundles its own React and exposes mount/unmount.",
+  "scripts": {
+    "dev": "rsbuild dev",
+    "build": "rsbuild build",
+    "preview": "rsbuild preview"
+  },
+  "dependencies": {
+    "@poc/bus": "1.0.0",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
+  },
+  "devDependencies": {
+    "@module-federation/rsbuild-plugin": "^2.8.0",
+    "@rsbuild/core": "2.1.4",
+    "@rsbuild/plugin-react": "^2.1.0",
+    "@types/react": "^17.0.83",
+    "@types/react-dom": "^17.0.26",
+    "typescript": "^5.7.2"
+  }
+}

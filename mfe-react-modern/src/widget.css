@@ -1,0 +1,112 @@
+/* Owned by this microfrontend. Each MFE ships its own styles and its own
+   accent colour — that independence is the point. Class names are prefixed to
+   keep three frameworks' stylesheets from colliding on one page. */
+
+.mfe-card--modern {
+  --accent: #16a34a;
+  --accent-soft: #dcfce7;
+}
+
+.mfe-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 1.25rem;
+  border: 1px solid #e2e8f0;
+  border-top: 3px solid var(--accent);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 6%);
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #0f172a;
+}
+
+.mfe-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.mfe-card__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.mfe-card__badge {
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: nowrap;
+}
+
+.mfe-card__contract {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #475569;
+}
+
+.mfe-card__contract code {
+  padding: 0.05rem 0.25rem;
+  border-radius: 4px;
+  background: #f1f5f9;
+  font-size: 0.95em;
+}
+
+.mfe-card__counter {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.mfe-card__count {
+  font-size: 2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  min-width: 2.5rem;
+}
+
+.mfe-card__button {
+  padding: 0.4rem 0.9rem;
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mfe-card__button:hover {
+  filter: brightness(1.08);
+}
+
+.mfe-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin: 0;
+  padding-top: 0.75rem;
+  border-top: 1px dashed #e2e8f0;
+  font-size: 0.72rem;
+}
+
+.mfe-card__meta dt {
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.mfe-card__meta dd {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #334155;
+}

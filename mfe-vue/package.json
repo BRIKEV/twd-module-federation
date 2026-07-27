@@ -1,0 +1,21 @@
+{
+  "name": "mfe-vue",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Remote on :3003 — Vue 3. Bundles its own Vue and exposes mount/unmount.",
+  "scripts": {
+    "dev": "rsbuild dev",
+    "build": "rsbuild build",
+    "preview": "rsbuild preview"
+  },
+  "dependencies": {
+    "@poc/bus": "1.0.0",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@module-federation/rsbuild-plugin": "^2.8.0",
+    "@rsbuild/core": "2.1.4",
+    "@rsbuild/plugin-vue": "^2.0.0",
+    "typescript": "^5.7.2"
+  }
+}
