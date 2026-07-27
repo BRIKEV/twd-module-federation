@@ -7,7 +7,13 @@ interface Props {
   hostLabel?: string;
 }
 
-type State = BusSnapshot;
+type State = BusSnapshot & { greeting: string };
+
+/**
+ * This microfrontend owns /api/legacy/* and nothing else touches it, so this
+ * team mocks it in their own TWD tests without coordinating with anyone.
+ */
+const FALLBACK_GREETING = 'api offline';
 
 /**
  * A deliberately old-fashioned React component: a class, `this.setState`, and
@@ -20,18 +26,39 @@ type State = BusSnapshot;
  */
 export default class LegacyWidget extends React.Component<Props, State> {
   private unsubscribe?: () => void;
+  private mounted = false;
 
   constructor(props: Props) {
     super(props);
-    this.state = getState();
+    this.state = { ...getState(), greeting: FALLBACK_GREETING };
     this.handleClick = this.handleClick.bind(this);
+    this.loadGreeting = this.loadGreeting.bind(this);
   }
 
   componentDidMount() {
+    this.mounted = true;
     this.unsubscribe = subscribe((snapshot) => this.setState(snapshot));
+    void this.loadGreeting();
+  }
+
+  async loadGreeting() {
+    try {
+      const res = await fetch('/api/legacy/greeting');
+      if (!res.ok) {
+        if (this.mounted) this.setState({ greeting: FALLBACK_GREETING });
+        return;
+      }
+      const data = await res.json();
+      if (this.mounted) this.setState({ greeting: data?.message ?? FALLBACK_GREETING });
+    } catch {
+      // Fall back rather than keeping a stale greeting — a reload that failed
+      // should say so, not leave the last good value on screen.
+      if (this.mounted) this.setState({ greeting: FALLBACK_GREETING });
+    }
   }
 
   componentWillUnmount() {
+    this.mounted = false;
     this.unsubscribe?.();
   }
 
@@ -40,7 +67,7 @@ export default class LegacyWidget extends React.Component<Props, State> {
   }
 
   render() {
-    const { count, lastSource } = this.state;
+    const { count, lastSource, greeting } = this.state;
 
     return (
       <section className="mfe-card mfe-card--legacy">
@@ -56,7 +83,9 @@ export default class LegacyWidget extends React.Component<Props, State> {
         </p>
 
         <div className="mfe-card__counter">
-          <span className="mfe-card__count">{count}</span>
+          <span className="mfe-card__count" data-testid="legacy-count">
+            {count}
+          </span>
           <button
             type="button"
             className="mfe-card__button"
@@ -74,6 +103,21 @@ export default class LegacyWidget extends React.Component<Props, State> {
           <div>
             <dt>bus instance</dt>
             <dd>{instanceId}</dd>
+          </div>
+          <div>
+            <dt>greeting</dt>
+            <dd>
+              <span data-testid="legacy-greeting">{greeting}</span>
+              <button
+                type="button"
+                className="mfe-card__refresh"
+                data-testid="legacy-refresh"
+                aria-label="Reload greeting"
+                onClick={this.loadGreeting}
+              >
+                ↻
+              </button>
+            </dd>
           </div>
           {this.props.hostLabel ? (
             <div>

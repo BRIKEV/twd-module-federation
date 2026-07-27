@@ -20,3 +20,31 @@ if (rootEl) {
 
   mount(slot, {});
 }
+
+/**
+ * TWD lives in the standalone harness, never in the exposed module — see the
+ * note in mfe-react-modern/src/bootstrap.tsx for why.
+ *
+ * twd-js has React in its peerDependencies but the bundled entry renders with
+ * Preact, so this Vue app pulls in no React at all.
+ */
+if (import.meta.env.DEV) {
+  void (async () => {
+    const ctx = import.meta.webpackContext('./', {
+      recursive: true,
+      regExp: /\.twd\.test\.tsx?$/,
+    });
+    const tests = Object.fromEntries(
+      ctx.keys().map((key) => [key, () => Promise.resolve(ctx(key))]),
+    );
+
+    const { initTWD } = await import('twd-js/bundled');
+    initTWD(tests, {
+      open: false,
+      position: 'left',
+      search: true,
+      serviceWorker: true,
+      serviceWorkerUrl: '/mock-sw.js',
+    });
+  })();
+}

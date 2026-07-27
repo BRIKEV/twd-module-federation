@@ -4,16 +4,38 @@ import { subscribe, getState, increment, instanceId } from '@poc/bus';
 
 defineProps<{ hostLabel?: string }>();
 
+// This microfrontend owns /api/vue/* and nothing else touches it, so this team
+// mocks it in their own TWD tests without coordinating with anyone.
+const FALLBACK_GREETING = 'api offline';
+
 const snapshot = ref(getState());
+const greeting = ref(FALLBACK_GREETING);
 let unsubscribe: (() => void) | undefined;
 
 // The bus is a plain callback store, so bridging it into Vue reactivity is
 // three lines. The same store is driving a React 19 useSyncExternalStore and a
 // React 17 setState elsewhere on this page.
+async function loadGreeting() {
+  try {
+    const res = await fetch('/api/vue/greeting');
+    if (!res.ok) {
+      greeting.value = FALLBACK_GREETING;
+      return;
+    }
+    const data = await res.json();
+    greeting.value = data?.message ?? FALLBACK_GREETING;
+  } catch {
+    // Fall back rather than keeping a stale greeting — a reload that failed
+    // should say so, not leave the last good value on screen.
+    greeting.value = FALLBACK_GREETING;
+  }
+}
+
 onMounted(() => {
   unsubscribe = subscribe((next) => {
     snapshot.value = next;
   });
+  void loadGreeting();
 });
 
 onUnmounted(() => {
@@ -34,7 +56,7 @@ onUnmounted(() => {
     </p>
 
     <div class="mfe-card__counter">
-      <span class="mfe-card__count">{{ snapshot.count }}</span>
+      <span class="mfe-card__count" data-testid="vue-count">{{ snapshot.count }}</span>
       <button type="button" class="mfe-card__button" @click="increment('Vue')">
         +1
       </button>
@@ -48,6 +70,21 @@ onUnmounted(() => {
       <div>
         <dt>bus instance</dt>
         <dd>{{ instanceId }}</dd>
+      </div>
+      <div>
+        <dt>greeting</dt>
+        <dd>
+          <span data-testid="vue-greeting">{{ greeting }}</span>
+          <button
+            type="button"
+            class="mfe-card__refresh"
+            data-testid="vue-refresh"
+            aria-label="Reload greeting"
+            @click="loadGreeting"
+          >
+            ↻
+          </button>
+        </dd>
       </div>
       <div v-if="hostLabel">
         <dt>mounted by</dt>

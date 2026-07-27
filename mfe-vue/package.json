@@ -16,6 +16,7 @@
     "@module-federation/rsbuild-plugin": "^2.8.0",
     "@rsbuild/core": "2.1.4",
     "@rsbuild/plugin-vue": "^2.0.0",
+    "twd-js": "^1.8.2",
     "typescript": "^5.7.2"
   }
 }

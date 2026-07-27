@@ -1,6 +1,16 @@
-import React, { useSyncExternalStore } from 'react';
+import React, { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { subscribe, getState, increment, instanceId } from '@poc/bus';
 import './widget.css';
+
+/**
+ * This microfrontend owns its own backend endpoint, and therefore its own
+ * mocks. Nothing else on the page calls /api/modern/*, so this team can mock it
+ * in their own TWD tests without coordinating with anyone.
+ *
+ * There is no server behind it in the POC — a 404 just leaves the fallback in
+ * place, which is also what makes the mocked test result obvious.
+ */
+const FALLBACK_GREETING = 'api offline';
 
 /**
  * The React 19 microfrontend.
@@ -14,6 +24,27 @@ import './widget.css';
  */
 export default function Widget() {
   const snapshot = useSyncExternalStore(subscribe, getState);
+  const [greeting, setGreeting] = useState(FALLBACK_GREETING);
+
+  const loadGreeting = useCallback(async () => {
+    try {
+      const res = await fetch('/api/modern/greeting');
+      if (!res.ok) {
+        setGreeting(FALLBACK_GREETING);
+        return;
+      }
+      const data = await res.json();
+      setGreeting(data?.message ?? FALLBACK_GREETING);
+    } catch {
+      // Fall back rather than keeping a stale greeting — a reload that failed
+      // should say so, not leave the last good value on screen.
+      setGreeting(FALLBACK_GREETING);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadGreeting();
+  }, [loadGreeting]);
 
   return (
     <section className="mfe-card mfe-card--modern">
@@ -29,7 +60,9 @@ export default function Widget() {
       </p>
 
       <div className="mfe-card__counter">
-        <span className="mfe-card__count">{snapshot.count}</span>
+        <span className="mfe-card__count" data-testid="modern-count">
+          {snapshot.count}
+        </span>
         <button
           type="button"
           className="mfe-card__button"
@@ -47,6 +80,21 @@ export default function Widget() {
         <div>
           <dt>bus instance</dt>
           <dd>{instanceId}</dd>
+        </div>
+        <div>
+          <dt>greeting</dt>
+          <dd>
+            <span data-testid="modern-greeting">{greeting}</span>
+            <button
+              type="button"
+              className="mfe-card__refresh"
+              data-testid="modern-refresh"
+              aria-label="Reload greeting"
+              onClick={() => void loadGreeting()}
+            >
+              ↻
+            </button>
+          </dd>
         </div>
       </dl>
     </section>

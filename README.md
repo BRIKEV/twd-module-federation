@@ -10,6 +10,9 @@ A React 19 host composing three independently built microfrontends:
 | `mfe-vue/` | 3003 | Vue 3 | **B** — exposes `mount`/`unmount` |
 | `packages/bus/` | — | plain ESM, zero deps | shared singleton store |
 
+Every remote also carries its own TWD setup — see
+[Per-team testing with TWD](#per-team-testing-with-twd).
+
 Built with Rsbuild + `@module-federation/rsbuild-plugin`. Each app is a separate
 npm workspace with its own `node_modules`, so React 17 and React 19 genuinely
 coexist rather than being faked.
@@ -110,6 +113,45 @@ Vue is deliberately not shared — nothing else on the page uses it, so the shar
 scope would add negotiation overhead for nothing. If a second Vue remote
 appeared, those two would negotiate Vue independently of anything React does.
 
+## Per-team testing with TWD
+
+Each remote has its own [TWD](https://twd.dev) setup: its own `twd-js`, its own
+`mock-sw.js`, its own suites, its own mocked endpoints. Open a remote's port and
+the sidebar is there.
+
+```
+mfe-react-modern/src/Widget.twd.test.ts        mocks /api/modern/*
+mfe-react-legacy/src/LegacyWidget.twd.test.ts  mocks /api/legacy/*
+mfe-vue/src/VueWidget.twd.test.ts              mocks /api/vue/*
+```
+
+No shared fixture file and no cross-team suite to keep green — which is the
+point. Each card fetches a greeting from its own endpoint and has a `↻` button;
+each team's test mocks only its own URL.
+
+The three suites are near-identical despite running against React 19 hooks, a
+React 17 class component and a Vue 3 SFC, because TWD asserts against the DOM.
+That's the migration story: when the React 17 remote eventually moves to 19, its
+tests don't change.
+
+Two integration details specific to this setup:
+
+**TWD is wired into each remote's `bootstrap`, never into the exposed module.**
+Under federation all three remotes run on the *host's* origin, and `initTWD()`
+appends an unguarded `#twd-sidebar-root` on every call — so putting it in
+`Widget.tsx` would give the host page three sidebars with duplicate DOM ids. The
+host page is verified to contain no TWD at all.
+
+**Test discovery uses `import.meta.webpackContext`.** Rsbuild is Rspack-based,
+so Vite's `import.meta.glob` doesn't exist here and the documented CRA
+`require.context` form isn't right either.
+
+Both of those, plus a production leak found along the way (`mock-sw.js` is
+copied into `dist/` because TWD's `removeMockServiceWorker` is Vite-only — see
+`scripts/removeMockServiceWorker.ts` in each remote), are written up as a
+proposal in the twd repo at
+`specs/2026-07-27-module-federation-design.md`.
+
 ## Verified
 
 Checked in a real browser (Puppeteer) against both `npm run dev` and the
@@ -121,6 +163,9 @@ production build behind `npm run preview`:
 - `+1` in any framework updates the other two and the host bar; host reset clears all three
 - each remote runs standalone on its own port
 - with :3003 killed, the other two still render, stay interactive and stay in sync
+- all 18 TWD tests pass across the three remotes, each against its own mocked API
+- the federated host page has no TWD sidebar, runner, state or service worker
+- production bundles contain no TWD runtime, and `mock-sw.js` is stripped from `dist/`
 
 ## Known gaps
 

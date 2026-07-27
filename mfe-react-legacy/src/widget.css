@@ -106,7 +106,28 @@
 }
 
 .mfe-card__meta dd {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   margin: 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   color: #334155;
+}
+
+/* Re-triggers this microfrontend's own API call, which is what its TWD test
+   clicks to exercise a mocked response. */
+.mfe-card__refresh {
+  padding: 0 0.2rem;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.mfe-card__refresh:hover {
+  background: var(--accent-soft);
 }
