@@ -60,9 +60,10 @@ export default function Widget() {
       </p>
 
       <div className="mfe-card__counter">
-        <span className="mfe-card__count" data-testid="modern-count">
-          {snapshot.count}
-        </span>
+        {/* <output> is the correct element for a computed value, and it comes
+            with an implicit role="status" — so tests can find it semantically
+            and screen readers announce the change. */}
+        <output className="mfe-card__count">{snapshot.count}</output>
         <button
           type="button"
           className="mfe-card__button"
@@ -84,11 +85,10 @@ export default function Widget() {
         <div>
           <dt>greeting</dt>
           <dd>
-            <span data-testid="modern-greeting">{greeting}</span>
+            <span>{greeting}</span>
             <button
               type="button"
               className="mfe-card__refresh"
-              data-testid="modern-refresh"
               aria-label="Reload greeting"
               onClick={() => void loadGreeting()}
             >

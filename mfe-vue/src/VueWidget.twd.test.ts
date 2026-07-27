@@ -10,21 +10,30 @@ import { reset } from '@poc/bus';
  * is Vue.
  */
 
+/**
+ * Waits for the counter to *reach* a value.
+ *
+ * `findBy*` retries, so putting the expected value in the query rather than in
+ * a following assertion is what makes this immune to re-render timing. The
+ * counter is an `<output>` (implicit role=status), so the selector is a
+ * semantic element rather than a test id, and a stray digit elsewhere on the
+ * card can never match it.
+ */
 const counterReaches = (value: string) =>
-  screenDom.findByText(value, { selector: '[data-testid="vue-count"]' });
-
-const greetingReads = (text: string) =>
-  screenDom.findByText(text, { selector: '[data-testid="vue-greeting"]' });
+  screenDom.findByText(value, { selector: 'output' });
 
 describe('Vue microfrontend', () => {
   beforeEach(() => {
     twd.clearRequestMockRules();
+    // The test can drive the shared store directly, which is the cheapest way
+    // to make the counter assertions deterministic.
     reset('test setup');
   });
 
   it('renders on Vue 3', async () => {
-    const badge = await screenDom.findByText(/^vue 3\./);
-    twd.should(badge, 'be.visible');
+    twd.should(await screenDom.findByText(/^vue\s3\./), 'be.visible');
+    // The counter is exposed to assistive tech as a live region.
+    twd.should(await screenDom.findByRole('status'), 'be.visible');
   });
 
   it('increments the shared counter', async () => {
@@ -47,14 +56,16 @@ describe('Vue microfrontend', () => {
     );
 
     await twd.waitForRequest('vueGreeting');
-    await greetingReads('hello from the vue mock');
+    // Unique on the page, so plain text is enough — no scoping needed.
+    await screenDom.findByText('hello from the vue mock');
   });
 
   it('falls back when its API is unavailable', async () => {
+    // No mock rule registered, so the request 404s against the dev server.
     await userEvent.click(
       await screenDom.findByRole('button', { name: 'Reload greeting' }),
     );
 
-    await greetingReads('api offline');
+    await screenDom.findByText('api offline');
   });
 });

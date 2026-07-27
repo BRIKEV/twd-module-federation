@@ -83,9 +83,9 @@ export default class LegacyWidget extends React.Component<Props, State> {
         </p>
 
         <div className="mfe-card__counter">
-          <span className="mfe-card__count" data-testid="legacy-count">
-            {count}
-          </span>
+          {/* See the note in mfe-react-modern/src/Widget.tsx — <output> gives
+              an implicit role="status" so tests need no test id. */}
+          <output className="mfe-card__count">{count}</output>
           <button
             type="button"
             className="mfe-card__button"
@@ -107,11 +107,10 @@ export default class LegacyWidget extends React.Component<Props, State> {
           <div>
             <dt>greeting</dt>
             <dd>
-              <span data-testid="legacy-greeting">{greeting}</span>
+              <span>{greeting}</span>
               <button
                 type="button"
                 className="mfe-card__refresh"
-                data-testid="legacy-refresh"
                 aria-label="Reload greeting"
                 onClick={this.loadGreeting}
               >

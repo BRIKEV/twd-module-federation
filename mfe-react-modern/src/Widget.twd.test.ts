@@ -11,17 +11,16 @@ import { reset } from '@poc/bus';
  */
 
 /**
- * Waits for the counter to *reach* a value. `findBy*` retries, so putting the
- * expected value in the query rather than in an assertion is what makes this
- * immune to React's re-render timing. The `selector` option is Testing
- * Library's own way to disambiguate a text query — a bare `findByText('1')`
- * would be one stray "1" away from breaking.
+ * Waits for the counter to *reach* a value.
+ *
+ * `findBy*` retries, so putting the expected value in the query rather than in
+ * a following assertion is what makes this immune to re-render timing. The
+ * counter is an `<output>` (implicit role=status), so the selector is a
+ * semantic element rather than a test id, and a stray digit elsewhere on the
+ * card can never match it.
  */
 const counterReaches = (value: string) =>
-  screenDom.findByText(value, { selector: '[data-testid="modern-count"]' });
-
-const greetingReads = (text: string) =>
-  screenDom.findByText(text, { selector: '[data-testid="modern-greeting"]' });
+  screenDom.findByText(value, { selector: 'output' });
 
 describe('Modern React microfrontend', () => {
   beforeEach(() => {
@@ -32,8 +31,9 @@ describe('Modern React microfrontend', () => {
   });
 
   it('renders on React 19', async () => {
-    const badge = await screenDom.findByText(/^react 19\./);
-    twd.should(badge, 'be.visible');
+    twd.should(await screenDom.findByText(/^react\s19\./), 'be.visible');
+    // The counter is exposed to assistive tech as a live region.
+    twd.should(await screenDom.findByRole('status'), 'be.visible');
   });
 
   it('increments the shared counter', async () => {
@@ -56,7 +56,8 @@ describe('Modern React microfrontend', () => {
     );
 
     await twd.waitForRequest('modernGreeting');
-    await greetingReads('hello from the modern mock');
+    // Unique on the page, so plain text is enough — no scoping needed.
+    await screenDom.findByText('hello from the modern mock');
   });
 
   it('falls back when its API is unavailable', async () => {
@@ -65,6 +66,6 @@ describe('Modern React microfrontend', () => {
       await screenDom.findByRole('button', { name: 'Reload greeting' }),
     );
 
-    await greetingReads('api offline');
+    await screenDom.findByText('api offline');
   });
 });

@@ -1,17 +1,21 @@
-# Module Federation POC — Vue 3 + legacy React 17 + React 19 on one page
+# TWD × Module Federation
 
-A React 19 host composing three independently built microfrontends:
+A POC for running [TWD](https://twd.dev) inside a Module Federation setup: three
+independently built microfrontends on one page, each owning its own test suite,
+its own API mocks and its own service worker.
 
-| App | Port | Stack | Federation contract |
-|---|---|---|---|
-| `host/` | 3000 | React 19 | — (shell) |
-| `mfe-react-modern/` | 3001 | React 19 | **A** — exposes a React component |
-| `mfe-react-legacy/` | 3002 | React 17, pre-18 API | **B** — exposes `mount`/`unmount` |
-| `mfe-vue/` | 3003 | Vue 3 | **B** — exposes `mount`/`unmount` |
-| `packages/bus/` | — | plain ESM, zero deps | shared singleton store |
+The federation part is the environment. The question being answered is **how a
+per-app in-browser test runner behaves when N apps are composed onto a single
+page** — where they work, where they don't, and what would need to change
+upstream.
 
-Every remote also carries its own TWD setup — see
-[Per-team testing with TWD](#per-team-testing-with-twd).
+| App | Port | Stack | Federation contract | TWD |
+|---|---|---|---|---|
+| `host/` | 3000 | React 19 | — (shell) | — |
+| `mfe-react-modern/` | 3001 | React 19 | **A** — exposes a React component | 4 tests |
+| `mfe-react-legacy/` | 3002 | React 17, pre-18 API | **B** — exposes `mount`/`unmount` | 4 tests |
+| `mfe-vue/` | 3003 | Vue 3 | **B** — exposes `mount`/`unmount` | 4 tests |
+| `packages/bus/` | — | plain ESM, zero deps | shared singleton store | — |
 
 Built with Rsbuild + `@module-federation/rsbuild-plugin`. Each app is a separate
 npm workspace with its own `node_modules`, so React 17 and React 19 genuinely
@@ -19,13 +23,21 @@ coexist rather than being faked.
 
 ```bash
 npm install
-npm run dev      # all four, http://localhost:3000
+npm run dev
 ```
 
-Each remote also runs on its own (`http://localhost:3001` … `3003`) with no host.
+- **http://localhost:3000** — the composed page, all three remotes together
+- **http://localhost:3001** … **3003** — each remote alone, with its TWD sidebar
 
 `npm run build` builds all four; `npm run preview` serves the built output on
 the same ports.
+
+**Findings, in short:** TWD works cleanly per-remote and needs no federation
+awareness to do so. It cannot currently run on the *composed* page, because
+`initSidebar` isn't idempotent. Three smaller gaps showed up along the way. All
+of it is written up as a proposal in the twd repo at
+`specs/2026-07-27-module-federation-design.md`; the summary is
+[below](#what-this-poc-found-about-twd).
 
 ## The one idea
 
@@ -115,9 +127,9 @@ appeared, those two would negotiate Vue independently of anything React does.
 
 ## Per-team testing with TWD
 
-Each remote has its own [TWD](https://twd.dev) setup: its own `twd-js`, its own
-`mock-sw.js`, its own suites, its own mocked endpoints. Open a remote's port and
-the sidebar is there.
+Each remote has its own [TWD](https://twd.dev) setup: its own `twd-js`
+dependency, its own `mock-sw.js`, its own suites, its own mocked endpoints. Open
+a remote's port and the sidebar is there.
 
 ```
 mfe-react-modern/src/Widget.twd.test.ts        mocks /api/modern/*
@@ -126,30 +138,102 @@ mfe-vue/src/VueWidget.twd.test.ts              mocks /api/vue/*
 ```
 
 No shared fixture file and no cross-team suite to keep green — which is the
-point. Each card fetches a greeting from its own endpoint and has a `↻` button;
-each team's test mocks only its own URL.
+point. Each card fetches a greeting from an endpoint only it calls and has a `↻`
+button to re-request it, so every team has a real request to mock and mocks
+nothing belonging to anyone else.
+
+### Setup, per remote
+
+Three steps, identical in all three regardless of framework:
+
+```bash
+npm install twd-js --workspace <remote>   # 1. the dependency
+cd <remote> && npx twd-js init public     # 2. mock-sw.js at the origin root
+```
+
+```ts
+// 3. src/bootstrap.tsx — the standalone entry, NOT the exposed module
+if (import.meta.env.DEV) {
+  void (async () => {
+    // Rspack's equivalent of Vite's import.meta.glob.
+    const ctx = import.meta.webpackContext('./', {
+      recursive: true,
+      regExp: /\.twd\.test\.tsx?$/,
+    });
+    const tests = Object.fromEntries(
+      ctx.keys().map((key) => [key, () => Promise.resolve(ctx(key))]),
+    );
+
+    const { initTWD } = await import('twd-js/bundled');
+    initTWD(tests, { serviceWorker: true, serviceWorkerUrl: '/mock-sw.js' });
+  })();
+}
+```
+
+`import.meta.webpackContext` is the part that isn't in the docs — Rsbuild is
+Rspack-based, so Vite's `import.meta.glob` doesn't exist here and CRA's
+`require.context` isn't right either.
+
+### How the tests are written
+
+Following [twd.dev/writing-tests](https://twd.dev/writing-tests): `findBy*`
+first, then role → label → text → testid. There are **no test ids and no CSS
+selectors** in any suite — 9 `findByRole` and 10 `findByText` across the three.
+
+```ts
+it('increments the shared counter', async () => {
+  await counterReaches('0');
+  await userEvent.click(await screenDom.findByRole('button', { name: '+1' }));
+  await counterReaches('1');
+});
+```
+
+Two things make that possible:
+
+- **The counter is an `<output>`, not a `<span>`.** It's the correct element for
+  a computed value and carries an implicit `role="status"`, so it's reachable
+  semantically. Where markup can't be queried accessibly, that's usually an
+  accessibility bug rather than a reason for a test id.
+- **The expected value goes in the query, not in a following assertion.**
+  `findBy*` retries, so `findByText('1', { selector: 'output' })` waits for the
+  counter to *reach* 1 and can't race React's or Vue's re-render timing.
+
+Querying buttons by accessible name has a useful side effect: the `aria-label`s
+are now under test. Drop the label on the `↻` button and the suite fails.
 
 The three suites are near-identical despite running against React 19 hooks, a
-React 17 class component and a Vue 3 SFC, because TWD asserts against the DOM.
-That's the migration story: when the React 17 remote eventually moves to 19, its
-tests don't change.
+React 17 class component and a Vue 3 SFC, because TWD queries the DOM and the
+accessibility tree. That's the migration story — when the React 17 remote
+eventually moves to 19, its tests don't change.
 
-Two integration details specific to this setup:
+## What this POC found about TWD
 
-**TWD is wired into each remote's `bootstrap`, never into the exposed module.**
-Under federation all three remotes run on the *host's* origin, and `initTWD()`
-appends an unguarded `#twd-sidebar-root` on every call — so putting it in
-`Widget.tsx` would give the host page three sidebars with duplicate DOM ids. The
-host page is verified to contain no TWD at all.
+**TWD needs no federation awareness to work per-remote.** Install it, point it
+at the origin's own `mock-sw.js`, done. Nothing in the three suites knows that
+federation exists.
 
-**Test discovery uses `import.meta.webpackContext`.** Rsbuild is Rspack-based,
-so Vite's `import.meta.glob` doesn't exist here and the documented CRA
-`require.context` form isn't right either.
+**It can't run on the composed page.** `initSidebar` appends an unguarded
+`#twd-sidebar-root` on every call, and under federation all three remotes
+execute on the *host's* origin — so three `initTWD()` calls would mean three
+sidebars with duplicate DOM ids. That's why TWD is wired into each remote's
+`bootstrap` and never into the exposed module, and why the host page is
+verified to contain no TWD at all.
 
-Both of those, plus a production leak found along the way (`mock-sw.js` is
-copied into `dist/` because TWD's `removeMockServiceWorker` is Vite-only — see
-`scripts/removeMockServiceWorker.ts` in each remote), are written up as a
-proposal in the twd repo at
+Better news than expected: `window.__TWD_STATE__` and `window.__TWD_MOCK_STATE__`
+mean separate copies of twd-js on one page already share a registry. The hard
+part is effectively done; an idempotent `initSidebar` is the blocker.
+
+**Three smaller gaps:**
+
+- `removeMockServiceWorker` is a Vite plugin only, so on Rsbuild `mock-sw.js` is
+  copied into `dist/` and would be published. Each remote carries a hand-rolled
+  `scripts/removeMockServiceWorker.ts` to strip it. This affects every non-Vite
+  user, federated or not.
+- Test discovery for Rspack/Rsbuild isn't documented.
+- Suites live in one flat registry with no namespacing, so two teams writing
+  `describe('App')` collide and a failure doesn't name an owner.
+
+Full write-up, with proposed fixes ordered by cost: the twd repo at
 `specs/2026-07-27-module-federation-design.md`.
 
 ## Verified
@@ -164,14 +248,22 @@ production build behind `npm run preview`:
 - each remote runs standalone on its own port
 - with :3003 killed, the other two still render, stay interactive and stay in sync
 - all 18 TWD tests pass across the three remotes, each against its own mocked API
+- each remote's mock service worker registers and controls its own origin
 - the federated host page has no TWD sidebar, runner, state or service worker
 - production bundles contain no TWD runtime, and `mock-sw.js` is stripped from `dist/`
 
 ## Known gaps
 
+- **TWD only runs per-remote, never on the composed page** — see
+  [what this POC found](#what-this-poc-found-about-twd). Nothing currently tests
+  that the three microfrontends work *together*; that needs either the upstream
+  fix or a separate host-owned suite.
+- On a cold dev server the mock service worker occasionally hasn't claimed the
+  page by the time the first mocked test runs, which fails that one test. It
+  passes on every subsequent run. Waiting for `navigator.serviceWorker.controller`
+  before running is the workaround.
 - `npm audit` reports high-severity advisories, all from one transitive
   `adm-zip` pulled in by `@module-federation/dts-plugin`. Build-time only, never
   shipped to the browser.
-- No tests beyond the browser checks above.
 - Ports and remote URLs are hardcoded to `localhost`. A real deployment would
   inject them per environment.

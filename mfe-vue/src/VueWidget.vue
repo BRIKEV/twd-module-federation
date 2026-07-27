@@ -56,7 +56,9 @@ onUnmounted(() => {
     </p>
 
     <div class="mfe-card__counter">
-      <span class="mfe-card__count" data-testid="vue-count">{{ snapshot.count }}</span>
+      <!-- See the note in mfe-react-modern/src/Widget.tsx — <output> gives an
+           implicit role="status" so tests need no test id. -->
+      <output class="mfe-card__count">{{ snapshot.count }}</output>
       <button type="button" class="mfe-card__button" @click="increment('Vue')">
         +1
       </button>
@@ -74,11 +76,10 @@ onUnmounted(() => {
       <div>
         <dt>greeting</dt>
         <dd>
-          <span data-testid="vue-greeting">{{ greeting }}</span>
+          <span>{{ greeting }}</span>
           <button
             type="button"
             class="mfe-card__refresh"
-            data-testid="vue-refresh"
             aria-label="Reload greeting"
             @click="loadGreeting"
           >
