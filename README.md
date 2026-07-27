@@ -21,6 +21,7 @@ independently.
 
 ```bash
 npm install
+npm run setup     # twd-js init public, in all three remotes
 npm run dev
 ```
 
@@ -97,6 +98,13 @@ Three steps, identical regardless of framework:
 npm install twd-js twd-cli --workspace <remote>   # 1. dependencies
 cd <remote> && npx twd-js init public             # 2. mock-sw.js at the origin root
 ```
+
+`mock-sw.js` is **gitignored** here rather than committed, which is why step 2
+is wired up as `npm run setup`. A production pipeline builds from a clean
+checkout and never runs setup, so the worker can't be published — no build-time
+strip needed, on any bundler. The trade-off is that every clone runs one extra
+command; committing the file instead is perfectly valid, it just means you own
+keeping it out of `dist/`.
 
 ```ts
 // 3. src/bootstrap.tsx — the standalone entry, NOT the exposed module
@@ -217,16 +225,19 @@ mean separate copies of twd-js on one page share a registry. The hard part is
 effectively done — an idempotent `initSidebar` is the blocker.
 
 **A reproducible race in `initTWD`.** `initTests` and `initRequestMocking` are
-both fire-and-forget, so the sidebar — which `twd-cli` waits for — mounts before
-the service worker has claimed the page. The first mocked test therefore runs
-uncontrolled. With the default `retryCount: 2` it's invisible; with
-`retryCount: 1` the mocked test fails **100% of runs in all three remotes**.
+both fire-and-forget, so the sidebar — which `twd-cli` waits on as its readiness
+signal — mounts before the service worker has claimed the page. Measured on a
+cold profile: the sidebar appears at 7–12 ms, the worker takes control at
+35–62 ms, and `twd-cli` starts in that gap. With the default `retryCount: 2`
+it's invisible behind a green "Retried (1)"; with `retryCount: 1` the mocked
+test fails **100% of runs in all three remotes**. Not federation-specific —
+it reproduces in any project whose first test mocks a request. Investigation and
+proposed fix: `twd-cli/docs/spec-service-worker-readiness.md`.
 
-**Two smaller gaps.** `removeMockServiceWorker` is Vite-only, so on Rsbuild
-`mock-sw.js` is copied into `dist/` and would be published — each remote carries
-a hand-rolled `scripts/removeMockServiceWorker.ts` to strip it, and this affects
-every non-Vite user. And suites live in one flat registry with no namespacing,
-so two teams writing `describe('App')` collide with no owner attribution.
+**One smaller gap.** Suites live in one flat registry with no namespacing, so
+two teams writing `describe('App')` collide with no owner attribution — which
+matters more with external vendors than it sounds, because a failure doesn't
+route to anyone.
 
 Full write-up with fixes ordered by cost: the twd repo,
 `specs/2026-07-27-module-federation-design.md`.
@@ -244,7 +255,7 @@ In a real browser, against both `npm run dev` and the production build behind
 - with `:3003` killed, the other two still render and stay in sync
 - 12 TWD tests green via `twd-cli`, each remote against its own mocked API
 - the federated host page has no TWD sidebar, runner, state or service worker
-- production bundles contain no TWD runtime, and `mock-sw.js` is stripped from `dist/`
+- production bundles contain no TWD runtime
 
 ## Known gaps
 

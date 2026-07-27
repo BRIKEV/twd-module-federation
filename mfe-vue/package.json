@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Remote on :3003 — Vue 3. Bundles its own Vue and exposes mount/unmount.",
   "scripts": {
+    "setup:twd": "twd-js init public",
     "dev": "rsbuild dev",
     "build": "rsbuild build",
     "preview": "rsbuild preview",

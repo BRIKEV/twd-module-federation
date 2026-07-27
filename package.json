@@ -22,7 +22,8 @@
     "preview:modern": "npm run preview -w mfe-react-modern",
     "preview:legacy": "npm run preview -w mfe-react-legacy",
     "preview:vue": "npm run preview -w mfe-vue",
-    "test": "npm run test -w mfe-react-modern && npm run test -w mfe-react-legacy && npm run test -w mfe-vue"
+    "test": "npm run test -w mfe-react-modern && npm run test -w mfe-react-legacy && npm run test -w mfe-vue",
+    "setup": "npm run setup:twd -w mfe-react-modern -w mfe-react-legacy -w mfe-vue"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

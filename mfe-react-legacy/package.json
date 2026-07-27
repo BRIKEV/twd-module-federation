@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Remote on :3002 — React 17 with the pre-18 API. Bundles its own React and exposes mount/unmount.",
   "scripts": {
+    "setup:twd": "twd-js init public",
     "dev": "rsbuild dev",
     "build": "rsbuild build",
     "preview": "rsbuild preview",

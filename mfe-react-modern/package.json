@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Remote on :3001 — React 19. Shares React as a singleton with the host and exposes a real React component.",
   "scripts": {
+    "setup:twd": "twd-js init public",
     "dev": "rsbuild dev",
     "build": "rsbuild build",
     "preview": "rsbuild preview",

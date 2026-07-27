@@ -9,3 +9,9 @@ dist/
 *.log
 .env
 .env.local
+
+# TWD's mock service worker. Regenerate with `npm run setup`.
+# Keeping it out of git is the simplest way to guarantee it is never published:
+# a production pipeline builds from a clean checkout and never runs the setup
+# step, so there is nothing to strip at build time.
+**/public/mock-sw.js
