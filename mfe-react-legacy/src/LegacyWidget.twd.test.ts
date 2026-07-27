@@ -5,10 +5,18 @@ import { reset } from '@poc/bus';
 /**
  * This suite belongs to the legacy team and runs on :3002 only.
  *
- * Note there is nothing React-17-specific in here. TWD drives the real DOM, so
- * the same test API works against a class component on React 17 and a hooks
- * component on React 19 — which is what makes tests survive the migration.
+ * Note there is nothing React-17-specific in here — no shallow rendering, no
+ * enzyme, no test renderer. TWD queries the real accessibility tree, so the
+ * same test API works against a class component on React 17 and a hooks
+ * component on React 19. That is what lets these tests survive the migration.
  */
+
+const counterReaches = (value: string) =>
+  screenDom.findByText(value, { selector: '[data-testid="legacy-count"]' });
+
+const greetingReads = (text: string) =>
+  screenDom.findByText(text, { selector: '[data-testid="legacy-greeting"]' });
+
 describe('Legacy React microfrontend', () => {
   beforeEach(() => {
     twd.clearRequestMockRules();
@@ -16,17 +24,16 @@ describe('Legacy React microfrontend', () => {
   });
 
   it('renders on React 17', async () => {
-    const badge = await twd.get('.mfe-card--legacy .mfe-card__badge');
-    badge.should('contain.text', 'react 17');
+    const badge = await screenDom.findByText(/^react 17\./);
+    twd.should(badge, 'be.visible');
   });
 
   it('increments the shared counter', async () => {
-    await screenDom.findByText('0', { selector: '[data-testid="legacy-count"]' });
+    await counterReaches('0');
 
-    const plus = await twd.get('.mfe-card--legacy .mfe-card__button');
-    await userEvent.click(plus.el);
+    await userEvent.click(await screenDom.findByRole('button', { name: '+1' }));
 
-    await screenDom.findByText('1', { selector: '[data-testid="legacy-count"]' });
+    await counterReaches('1');
   });
 
   it('renders the greeting from its own mocked endpoint', async () => {
@@ -36,21 +43,19 @@ describe('Legacy React microfrontend', () => {
       response: { message: 'hello from the legacy mock' },
     });
 
-    const refresh = await twd.get('[data-testid="legacy-refresh"]');
-    await userEvent.click(refresh.el);
+    await userEvent.click(
+      await screenDom.findByRole('button', { name: 'Reload greeting' }),
+    );
 
     await twd.waitForRequest('legacyGreeting');
-    await screenDom.findByText('hello from the legacy mock', {
-      selector: '[data-testid="legacy-greeting"]',
-    });
+    await greetingReads('hello from the legacy mock');
   });
 
   it('falls back when its API is unavailable', async () => {
-    const refresh = await twd.get('[data-testid="legacy-refresh"]');
-    await userEvent.click(refresh.el);
+    await userEvent.click(
+      await screenDom.findByRole('button', { name: 'Reload greeting' }),
+    );
 
-    await screenDom.findByText('api offline', {
-      selector: '[data-testid="legacy-greeting"]',
-    });
+    await greetingReads('api offline');
   });
 });

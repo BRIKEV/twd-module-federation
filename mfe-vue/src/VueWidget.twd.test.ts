@@ -5,9 +5,17 @@ import { reset } from '@poc/bus';
 /**
  * This suite belongs to the Vue team and runs on :3003 only.
  *
- * Identical test API to the two React suites — TWD asserts against the DOM, so
- * it neither knows nor cares that this component is Vue.
+ * Line for line the same shape as the two React suites — TWD queries the DOM
+ * and the accessibility tree, so it neither knows nor cares that this component
+ * is Vue.
  */
+
+const counterReaches = (value: string) =>
+  screenDom.findByText(value, { selector: '[data-testid="vue-count"]' });
+
+const greetingReads = (text: string) =>
+  screenDom.findByText(text, { selector: '[data-testid="vue-greeting"]' });
+
 describe('Vue microfrontend', () => {
   beforeEach(() => {
     twd.clearRequestMockRules();
@@ -15,17 +23,16 @@ describe('Vue microfrontend', () => {
   });
 
   it('renders on Vue 3', async () => {
-    const badge = await twd.get('.mfe-card--vue .mfe-card__badge');
-    badge.should('contain.text', 'vue 3');
+    const badge = await screenDom.findByText(/^vue 3\./);
+    twd.should(badge, 'be.visible');
   });
 
   it('increments the shared counter', async () => {
-    await screenDom.findByText('0', { selector: '[data-testid="vue-count"]' });
+    await counterReaches('0');
 
-    const plus = await twd.get('.mfe-card--vue .mfe-card__button');
-    await userEvent.click(plus.el);
+    await userEvent.click(await screenDom.findByRole('button', { name: '+1' }));
 
-    await screenDom.findByText('1', { selector: '[data-testid="vue-count"]' });
+    await counterReaches('1');
   });
 
   it('renders the greeting from its own mocked endpoint', async () => {
@@ -35,21 +42,19 @@ describe('Vue microfrontend', () => {
       response: { message: 'hello from the vue mock' },
     });
 
-    const refresh = await twd.get('[data-testid="vue-refresh"]');
-    await userEvent.click(refresh.el);
+    await userEvent.click(
+      await screenDom.findByRole('button', { name: 'Reload greeting' }),
+    );
 
     await twd.waitForRequest('vueGreeting');
-    await screenDom.findByText('hello from the vue mock', {
-      selector: '[data-testid="vue-greeting"]',
-    });
+    await greetingReads('hello from the vue mock');
   });
 
   it('falls back when its API is unavailable', async () => {
-    const refresh = await twd.get('[data-testid="vue-refresh"]');
-    await userEvent.click(refresh.el);
+    await userEvent.click(
+      await screenDom.findByRole('button', { name: 'Reload greeting' }),
+    );
 
-    await screenDom.findByText('api offline', {
-      selector: '[data-testid="vue-greeting"]',
-    });
+    await greetingReads('api offline');
   });
 });

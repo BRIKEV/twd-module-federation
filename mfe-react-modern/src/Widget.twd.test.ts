@@ -9,6 +9,20 @@ import { reset } from '@poc/bus';
  * own endpoints in their own repos, against their own service worker, on their
  * own origin — no shared fixture file, no coordination.
  */
+
+/**
+ * Waits for the counter to *reach* a value. `findBy*` retries, so putting the
+ * expected value in the query rather than in an assertion is what makes this
+ * immune to React's re-render timing. The `selector` option is Testing
+ * Library's own way to disambiguate a text query — a bare `findByText('1')`
+ * would be one stray "1" away from breaking.
+ */
+const counterReaches = (value: string) =>
+  screenDom.findByText(value, { selector: '[data-testid="modern-count"]' });
+
+const greetingReads = (text: string) =>
+  screenDom.findByText(text, { selector: '[data-testid="modern-greeting"]' });
+
 describe('Modern React microfrontend', () => {
   beforeEach(() => {
     twd.clearRequestMockRules();
@@ -18,18 +32,16 @@ describe('Modern React microfrontend', () => {
   });
 
   it('renders on React 19', async () => {
-    const badge = await twd.get('.mfe-card--modern .mfe-card__badge');
-    badge.should('contain.text', 'react 19');
+    const badge = await screenDom.findByText(/^react 19\./);
+    twd.should(badge, 'be.visible');
   });
 
   it('increments the shared counter', async () => {
-    await screenDom.findByText('0', { selector: '[data-testid="modern-count"]' });
+    await counterReaches('0');
 
-    const plus = await twd.get('.mfe-card--modern .mfe-card__button');
-    await userEvent.click(plus.el);
+    await userEvent.click(await screenDom.findByRole('button', { name: '+1' }));
 
-    // find* retries, so this can't race React's re-render.
-    await screenDom.findByText('1', { selector: '[data-testid="modern-count"]' });
+    await counterReaches('1');
   });
 
   it('renders the greeting from its own mocked endpoint', async () => {
@@ -39,22 +51,20 @@ describe('Modern React microfrontend', () => {
       response: { message: 'hello from the modern mock' },
     });
 
-    const refresh = await twd.get('[data-testid="modern-refresh"]');
-    await userEvent.click(refresh.el);
+    await userEvent.click(
+      await screenDom.findByRole('button', { name: 'Reload greeting' }),
+    );
 
     await twd.waitForRequest('modernGreeting');
-    await screenDom.findByText('hello from the modern mock', {
-      selector: '[data-testid="modern-greeting"]',
-    });
+    await greetingReads('hello from the modern mock');
   });
 
   it('falls back when its API is unavailable', async () => {
     // No mock rule registered, so the request 404s against the dev server.
-    const refresh = await twd.get('[data-testid="modern-refresh"]');
-    await userEvent.click(refresh.el);
+    await userEvent.click(
+      await screenDom.findByRole('button', { name: 'Reload greeting' }),
+    );
 
-    await screenDom.findByText('api offline', {
-      selector: '[data-testid="modern-greeting"]',
-    });
+    await greetingReads('api offline');
   });
 });
