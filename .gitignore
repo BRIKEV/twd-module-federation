@@ -15,3 +15,6 @@ dist/
 # a production pipeline builds from a clean checkout and never runs the setup
 # step, so there is nothing to strip at build time.
 **/public/mock-sw.js
+
+# twd-cli run reports (one per remote)
+.twd/

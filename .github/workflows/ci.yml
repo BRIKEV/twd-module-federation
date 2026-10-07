@@ -1,0 +1,51 @@
+name: CI - TWD tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    # Each remote owns its suite, twd.config.json and port, and runs standalone —
+    # the host is never involved. One job per remote, like three team pipelines.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: mfe-react-modern
+            port: 3001
+          - app: mfe-react-legacy
+            port: 3002
+          - app: mfe-vue
+            port: 3003
+    name: test (${{ matrix.app }})
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # mock-sw.js is gitignored on purpose; generate it for this remote.
+      - name: Install mock service worker
+        run: npm run setup:twd -w ${{ matrix.app }}
+
+      - name: Start dev server
+        run: |
+          nohup npm run dev -w ${{ matrix.app }} > dev.log 2>&1 &
+          npx wait-on http://localhost:${{ matrix.port }}
+
+      - name: Run TWD tests
+        uses: BRIKEV/twd-cli/.github/actions/run@main
+        with:
+          working-directory: ${{ matrix.app }}

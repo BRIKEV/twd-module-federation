@@ -1,5 +1,4 @@
 {
   "url": "http://localhost:3003",
-  "headless": true,
   "coverage": false
 }
